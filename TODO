@@ -1,0 +1,12 @@
+TODO
+
+image:
+- get a working docker image with fdroidserver and web server
+- figure out how to get app into image
+-      "     how to pass app list into image
+-      "     entrypoint
+- crontab for autoupdate of apps
+
+app:
+- better error handling
+- handle token expiration

@@ -9,7 +9,7 @@ def main():
 
    # get args
    sys.argv.pop(0)
-   searchQuery = ' '.join(sys.argv)
+   appNames = sys.argv
 
    # read token cache
    tokenCache = configparser.ConfigParser()
@@ -19,7 +19,7 @@ def main():
       authSubToken = tokenCache['DEFAULT']['authSubToken']
       timezone = tokenCache['DEFAULT']['timezone']
       locale = tokenCache['DEFAULT']['locale']
-   except KeyError:
+   except configparser.NoSectionError:
       print("Missing login data. Please, check your cache file, or run login.py")
       sys.exit(1)
    except configparser.ParsingError:
@@ -39,18 +39,26 @@ def main():
       print("Error while trying to login to GP servers")
       sys.exit(2)
 
-   resultRaw = server.search(searchQuery, 20)
-
-   for app in resultRaw:
-      docid = app.get('docId')
-      details = server.details(docid)
-      filename = app.get('filename')
-      if filename is None:
-         filename = details.get('docId') + '.apk'
-      if details is None:
-         print('Package ', docid, ' does not exist')
-         continue
-      print(docid, ' , ', filename, details['versionCode'])
+   for app in appNames:
+      try:
+         details = server.details(app)
+         docid = details.get('docId')
+         filename = details.get('filename')
+         if filename is None:
+            filename = details.get('docId') + '.apk'
+         if details is None:
+            print('Package ', docid, ' does not exist')
+            continue
+      except:
+         print("Error while trying to get details for", app)
+      else:
+         print(docid, ' , ', filename, details['versionCode'])
+         data_gen = server.download(docid, details['versionCode'])
+         data_gen = data_gen.get('file').get('data')
+         filepath = filename
+         with open(filepath, 'wb') as apk_file:
+            for chunk in data_gen:
+               apk_file.write(chunk)
 
 
 if __name__ == "__main__":

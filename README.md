@@ -1,2 +1,3 @@
 # PMirror
-A self-hosted F-Droid repo populated with Play Store apps, managed from a cli interface
+A self-hosted Fdroid repo that syncs apps from the Play Store.
+All in a comfy Docker image you can build yourself!

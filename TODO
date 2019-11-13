@@ -8,5 +8,9 @@ image:
 - crontab for autoupdate of apps
 
 app:
+- unify login, download and search in only script only
+      pmirror.py -l (same as login)
+      pmirror.py -d (same as download)
+      pmirror.py -s (same as search)
 - better error handling
 - handle token expiration

@@ -1,2 +1,5 @@
 .cache.ini
 .token.ini
+bin
+include
+lib

@@ -1,5 +1,7 @@
-.cache.ini
-.token.ini
+pmirror/.cache.ini
+pmirror/.token.ini
 bin
 include
 lib
+pmirror/*.swp
+*.swp

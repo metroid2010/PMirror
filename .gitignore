@@ -5,3 +5,7 @@ include
 lib
 pmirror/*.swp
 *.swp
+pmirror/.idea
+pmirror/.cache.ini
+./.cache.ini
+pmirror/*.apk

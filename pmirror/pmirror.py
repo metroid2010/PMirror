@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 # vim: set expandtab shiftwidth=3 tabstop=3 autoindent: 
-# PMIrror
+# PMirror
 
 from gpapi.googleplay import GooglePlayAPI
 import configparser

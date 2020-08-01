@@ -4,137 +4,115 @@
 
 from gpapi.googleplay import GooglePlayAPI
 import configparser
+import argparse
 import sys
 import os
 import getopt
 
-def usage(length):
-   if length == "short"
-      print("usage: pmirror [-d|--download -m|--mail ]|[-s|--search]|[-l|--login]")
-   else
-      print("Usage:")
-      print("pmirror.py -l -m <mail> -p <password> [-c <save_file>] [-t <timezone] [-l <locale>]")
-      print("pmirror.py -d [-c <save_file>] PACKAGE_NAME1 PACKAGE_NAME2 ...")
-      print("pmirror.py -s [-c <save_file>] QUERY")
+class ConfigFile():
+   def __init__(self, filename):
+      self._filename = filename
+      self._config = configparser.ConfigParser()
+      self._set_defaults()
+   def load_config(self,filename):
+      if os.path.isfile(filename):
+         self._config.read(open(filename, 'r'))
+   def save(self):
+      with open(self._filename, 'w') as f:
+         self._config.write(f)
+   def _set_defaults(self):
+      self._config.add_section('PMIRROR')
+      self._config['PMIRROR']['mail'] = ""
+      self._config['PMIRROR']['locale'] = "en_US"
+      self._config['PMIRROR']['password'] = ""
+      self._config['PMIRROR']['timezone'] = "UTC"
+      self._config['PMIRROR']['gsfId'] = ""
+      self._config['PMIRROR']['authSubToken'] = ""
+   def get_mail(self): return self._config['PMIRROR']['mail']
+   def set_mail(self, mail): self._config['PMIRROR']['mail'] = mail
+   def get_password(self): return self._config['PMIRROR']['password']
+   def set_password(self, password): self._config['PMIRROR']['password'] = password
+   def get_locale(self): return self._config['PMIRROR']['locale']
+   def set_locale(self, locale): self._config['PMIRROR']['locale'] = locale
+   def get_timezone(self): return self._config['PMIRROR']['timezone']
+   def set_timezone(self, locale): self._config['PMIRROR']['timezone'] = timezone
+   def get_gsfId(self): return self._config['PMIRROR']['gsfId']
+   def set_gsfId(self, gsfId): self._config['PMIRROR']['gsfId'] = gsfId
+   def get_authSubToken(self): return self._config['PMIRROR']['authSubToken']
+   def set_authSubToken(self, authSubToken): self._config['PMIRROR']['authSubToken'] = authSubToken
 
-def loginWithToken(gsfId,authSubtoken,locale,timezone):
-   server = GooglePlayAPI(locale,timezone)
-   server.login(None, None, gsfId, authSubToken)
-   return server
+class ServerAPI():
+   def __init__(self, ConfigFile):
+      self._config = ConfigFile
+      self._server = GooglePlayAPI(self._config.get_locale(), self._config.get_timezone())
+   def login_with_token(self):
+      self._server.login(None, None, self._config.get_gsfId(), self._config.get_authSubToken())
+   def get_token(self):
+      self._server.login(self._config.get_mail(), self._config.get_password())
+      self._config.set_gsfId = self._server.gsfId
+      self._config.set_authSubToken = self._server.authSubToken
+   def download_app(self, appName):
+      details = self._server.details(appName)
+      docId = details.get('docId')
+      filename = details.get('filename')
+      if filename is None:
+         filename = details.get('docId') + '.apk'
+      if details is None:
+         print('Package ', docid, ' does not exist on the server')
+      else:
+         print(docid, ' , ', filename, ' , ', details['versionCode'])
+         data_gen = self._server.download(docid, details['versionCode'])
+         data_gen = data_gen.get('file').get('data')
+         filepath = filename
+         with open(filepath, 'wb') as apk_file:
+            for chunk in data_gen:
+               apk_file.write(chunk)
 
-# this one only gets the tokens
-def loginWithMail(mail,password,locale,timezone):
-   server = GooglePlayAPI(locale,timezone)
-   server.login(mail,password)
-   gsfId = server.gsfId
-   authSubToken = server.authSubToken
-   return gsfId,authSubToken
-   
-def saveCacheFile(mail,password,locale,timezone,gsfId,authSubToken,cacheFile):
-   tokenCache = configparser.ConfigParser()
-   tokenCache['DEFAULT'] = { 'mail': mail,
-                             'password': password,
-                             'locale': locale,
-                             'timezone': timezone,
-                             'authSubToken': authSubToken,
-                             'gsfId': gsfId }
-   with open(cacheFile, 'w') as configFile:
-      tokenCache.write(configFile)
+def usage():
+   print("Usage:")
+   print("pmirror.py -l -m <mail> -p <password> [-c <save_file>] [-t <timezone] [-l <locale>]")
+   print("pmirror.py -d [-c <save_file>] PACKAGE_NAME1 PACKAGE_NAME2 ...")
+   print("pmirror.py -s [-c <save_file>] QUERY")
 
-def readCacheFile(cacheFile):
-   tokenCache = configparser.ConfigParser()
-   tokenCache = read(cacheFile)
-   try:
-      gsfId = 
-      authSubToken = 
-      timezone =
-      locale = 
-   return gsfId,authSubToken,timezone,locale
+def parse_args():
+   parser = argparse.ArgumentParser(description='PMirror: search and download PlayStore apps')
+   parser.add_argument('-d', '--download', action='store_true',
+                        help='Download mode')
+   parser.add_argument('-s', '--search', action='store_true',
+                        help='Search mode')
+   parser.add_argument('-l', '--login', action='store_true',
+                        help='Login mode')
+   parser.add_argument('-c', '--config-file', metavar='FILENAME',
+                        help='Config file', default='pmirror.config')
 
-def downloadApp(gsfId,authSubToken,appName,directory,server)
-   details = server.details(appName)
-   filename = details.get('filename')
-   if filename is None:
-      filename = details.get('docId') + '.apk'
-   if details is None:
-      print('Package ', docid, ' does not exist on the server')
-      raise 
-
-def main():
-  
-   # defaults for the args
-   mail = ''
-   password = ''
-   cacheFile = '.cache.ini'
-   locale = 'en_US'
-   timezone = 'UTC'
-   mode = ''
-   
-   # get which mode we are working on
-   try:
-      opts, args = getopt.getopt(sys.argv[1],"d:l:s:h",["download","login","search","help"])
-   except getopt.GetoptError:
-      usage("short")
-      sys.exit(2)
-   for opt, arg in opts:
-      if opt in ("-h", "--help"):
-         usage("long")
-         sys.exit(0)
-      if opt in ("-l", "--login");
-         mode = 1 
-      if opt in ("-d", "--download");
-         mode = 2 
-      if opt in ("-s", "--search");
-         mode = 3 
-   
-   # login mode 
-   if mode == 1
-      try:
-         opts, args = getopt.getopt(sys.argv[2:],"p:m:c:t:l:",["password=","mail=","cache=","timezone=","locale="])
-      except getopt.GetoptError:
-         usage("short")
-         sys.exit(2)
-      for opt, arg in opts:
-         elif opt in ("-p", "--password"):
-            password = arg
-         elif opt in ("-m", "--mail"):
-            mail = arg
-         elif opt in ("-c", "--"):
-            cacheFile = arg
-         elif opt in ("-t", "--"):
-            timezone = arg
-         elif opt in ("-l", "--"):
-            locale = arg
-      if mail == '':
-         print("Missing mail")
-         sys.exit(1)
-      if password == '':
-         print("Missing password")
-         sys.exit(1)
-
-      # get token
-      gsfId, authSubToken = loginWithMail(mail,password,locale,timezone)
-      # save token
-      try:
-         saveCacheFile(mail,password,locale,timezone,gsfId,authSubToken,cacheFile):
-      except:
-         print("Error while trying to save cacheFile, nothing done.")
-         sys.exit(3)
+   return parser.parse_args()
 
 
-   # download mode
-   if mode == 1
-      try:
-         opts, args = getopt.getopt(sys.argv[2:],"c:",["cache="])
-      except getopt.GetoptError:
-         usage("short")
-         sys.exit(2)
-      for opt, arg in opts:
-         if opt in ("-c", "--"):
-            cacheFile = arg
-      readCacheFile(cacheFile)
+#def main():
+
+   ## get token
+   #gsfId, authSubToken = loginWithMail(mail,password,locale,timezone)
+   ## save token
+   #try:
+   #   saveCacheFile(mail,password,locale,timezone,gsfId,authSubToken,cacheFile):
+   #except:
+   #   print("Error while trying to save cacheFile, nothing done.")
+   #   sys.exit(3)
+
+
+   ## download mode
+   #if mode == 1
+   #   try:
+   #      opts, args = getopt.getopt(sys.argv[2:],"c:",["cache="])
+   #   except getopt.GetoptError:
+   #      usage("short")
+   #      sys.exit(2)
+   #   for opt, arg in opts:
+   #      if opt in ("-c", "--"):
+   #         cacheFile = arg
+   #   readCacheFile(cacheFile)
 
 
 
-if __name__ == "__main__":
-   main()
+#if __name__ == "__main__":
+#   main()
